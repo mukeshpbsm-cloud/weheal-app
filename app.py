@@ -298,29 +298,22 @@ with tab_log:
                 try:
                     client = genai.Client(api_key=gemini_api_key.strip())
 
-                    past_context = "### PRIOR HISTORICAL BASELINE & TRAUMA ARCHIVE:
-"
+                    past_context = "### PRIOR HISTORICAL BASELINE & TRAUMA ARCHIVE:\n"
                     if st.session_state.history:
                         for entry in reversed(st.session_state.history[:15]):
-                            past_context += f"- [{entry.get('date')} | {entry.get('trauma_category', 'Log')} | Strain: {entry.get('stress_level')}]: {entry.get('feed')}
-"
+                            past_context += f"- [{entry.get('date')} | {entry.get('trauma_category', 'Log')} | Strain: {entry.get('stress_level')}]: {entry.get('feed')}\n"
                     else:
-                        past_context += "No prior logs recorded.
-"
+                        past_context += "No prior logs recorded.\n"
 
                     payload = (
-                        f"{past_context}
-"
-                        f"### NEW RAW EMOTIONAL / TRAUMA LOG ({log_date.strftime('%Y-%m-%d')}):
-"
-                        f"Self-Reported Emotional Strain: {stress_level}
-"
-                        f"Raw Experience & Sensations:
-{user_feed}"
+                        f"{past_context}\n"
+                        f"### NEW RAW EMOTIONAL / TRAUMA LOG ({log_date.strftime('%Y-%m-%d')}):\n"
+                        f"Self-Reported Emotional Strain: {stress_level}\n"
+                        f"Raw Experience & Sensations:\n{user_feed}"
                     )
 
                     response = client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model="gemini-3.6-flash",
                         contents=payload,
                         config=types.GenerateContentConfig(
                             system_instruction=TRAUMA_EMOTION_DIAGNOSTIC_PROMPT,
@@ -331,8 +324,7 @@ with tab_log:
                     category_label = "Deep Emotional State"
                     if "**Autonomous Core Classification:**" in response.text:
                         try:
-                            category_label = response.text.split("**Autonomous Core Classification:**")[1].split("
-")[0].strip()
+                            category_label = response.text.split("**Autonomous Core Classification:**")[1].split("\n")[0].strip()
                         except Exception:
                             category_label = "Deep Emotional State"
 
@@ -456,9 +448,7 @@ with tab_digest:
 
                     logs_text = ""
                     for entry in st.session_state.history[:10]:
-                        logs_text += f"
-- [{entry.get('date')} | Strain: {entry.get('stress_level')}]: {entry.get('feed')}
-"
+                        logs_text += f"\n- [{entry.get('date')} | Strain: {entry.get('stress_level')}]: {entry.get('feed')}\n"
 
                     prompt = f"""You are the WeHeal Autonomous Synthesis Engine. Produce the morning 06:00 AM synthesis digest summarizing recent trajectory, nervous system regulation baseline, and primary somatic anchors for the upcoming day based on the following recent logs:
 
