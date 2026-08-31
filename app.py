@@ -158,6 +158,9 @@ def dispatch_diagnostic_email(report_markdown, log_date_str, category_label, rec
 # =========================================================
 # SETTINGS & MASTER DEVICE MODAL
 # =========================================================
+# =========================================================
+# SETTINGS & MASTER DEVICE MODAL
+# =========================================================
 @st.dialog("⚙️ System Settings & Master Administration")
 def settings_modal():
     t_status, t_login, t_subs, t_config = st.tabs([
@@ -176,16 +179,23 @@ def settings_modal():
 
     with t_login:
         st.subheader("🔐 Master Device Authentication")
-        pin_input = st.text_input("Enter Admin PIN:", type="password", key="modal_pin_field")
-        if st.button("Unlock Admin Mode", use_container_width=True):
-            clean_in = str(pin_input).strip()
-            clean_pin = str(master_admin_pin).strip()
-            if clean_in and (clean_in == clean_pin or clean_in == "admin123"):
-                st.session_state.is_admin_authenticated = True
-                st.success("Admin authorized successfully!")
+        if st.session_state.is_admin_authenticated:
+            st.success("✅ Master Admin Mode is currently ACTIVE.")
+            if st.button("🔒 Logout / Lock Master Mode", type="primary", use_container_width=True):
+                st.session_state.is_admin_authenticated = False
+                st.success("Logged out successfully.")
                 st.rerun()
-            else:
-                st.error("Invalid PIN.")
+        else:
+            pin_input = st.text_input("Enter Admin PIN:", type="password", key="modal_pin_field")
+            if st.button("Unlock Admin Mode", use_container_width=True):
+                clean_in = str(pin_input).strip()
+                clean_pin = str(master_admin_pin).strip()
+                if clean_in and (clean_in == clean_pin or clean_in == "admin123"):
+                    st.session_state.is_admin_authenticated = True
+                    st.success("Admin authorized successfully!")
+                    st.rerun()
+                else:
+                    st.error("Invalid PIN.")
 
     with t_subs:
         st.subheader("👥 Automated 06:00 AM Subscribers")
@@ -227,15 +237,22 @@ def settings_modal():
             cfg_email = st.text_input("Admin Default Email:", value=admin_default_email)
             cfg_pin = st.text_input("Master Admin PIN:", value=master_admin_pin, type="password")
 
-            if st.button("Save Local Configuration", use_container_width=True):
-                payload = {
-                    "gemini_api_key": cfg_gemini.strip(),
-                    "resend_api_key": cfg_resend.strip(),
-                    "admin_email": cfg_email.strip(),
-                    "admin_pin": cfg_pin.strip()
-                }
-                if save_json(CONFIG_FILE, payload):
-                    st.success("Configuration updated successfully!")
+            c_save, c_logout = st.columns([1, 1])
+            with c_save:
+                if st.button("Save Local Configuration", use_container_width=True):
+                    payload = {
+                        "gemini_api_key": cfg_gemini.strip(),
+                        "resend_api_key": cfg_resend.strip(),
+                        "admin_email": cfg_email.strip(),
+                        "admin_pin": cfg_pin.strip()
+                    }
+                    if save_json(CONFIG_FILE, payload):
+                        st.success("Configuration updated successfully!")
+                        st.rerun()
+            with c_logout:
+                if st.button("🔒 Logout Master Session", use_container_width=True):
+                    st.session_state.is_admin_authenticated = False
+                    st.success("Master session locked.")
                     st.rerun()
 
 # =========================================================
