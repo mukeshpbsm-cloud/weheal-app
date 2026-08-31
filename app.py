@@ -481,7 +481,7 @@ Provide an empowering, clinically astute summary with 3 clear sections:
 3. **Morning Vagal Regulation Anchors for Today**"""
 
                     resp = client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model="gemini-3.6-flash",
                         contents=prompt,
                         config=types.GenerateContentConfig(temperature=0.3)
                     )
