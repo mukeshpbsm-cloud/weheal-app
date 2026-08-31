@@ -158,9 +158,6 @@ def dispatch_diagnostic_email(report_markdown, log_date_str, category_label, rec
 # =========================================================
 # SETTINGS & MASTER DEVICE MODAL
 # =========================================================
-# =========================================================
-# SETTINGS & MASTER DEVICE MODAL
-# =========================================================
 @st.dialog("⚙️ System Settings & Master Administration")
 def settings_modal():
     t_status, t_login, t_subs, t_config = st.tabs([
@@ -256,7 +253,7 @@ def settings_modal():
                     st.rerun()
 
 # =========================================================
-# MAIN APP HEADER & TAB DECLARATIONS
+# MAIN APP HEADER & DYNAMIC TAB DECLARATIONS
 # =========================================================
 col_head, col_btn = st.columns([6, 1])
 with col_head:
@@ -266,12 +263,19 @@ with col_btn:
     if st.button("⚙️ Settings"):
         settings_modal()
 
-# Tabs Declaration
-tab_log, tab_history, tab_digest = st.tabs([
-    "📝 Log & Real-Time Analysis",
-    "📚 Archive & History",
-    "🌅 Morning Digest"
-])
+# Dynamic Tab Visibility: Show Archive ONLY if Admin is Logged In
+if st.session_state.is_admin_authenticated:
+    tab_log, tab_history, tab_digest = st.tabs([
+        "📝 Log & Real-Time Analysis",
+        "📚 Archive & History (Admin Only)",
+        "🌅 Morning Digest"
+    ])
+else:
+    tab_log, tab_digest = st.tabs([
+        "📝 Log & Real-Time Analysis",
+        "🌅 Morning Digest"
+    ])
+    tab_history = None
 
 # =========================================================
 # TAB 1: LOG & REAL-TIME ANALYSIS
@@ -330,7 +334,7 @@ with tab_log:
                     )
 
                     response = client.models.generate_content(
-                        model="gemini-3.6-flash",
+                        model="gemini-2.5-flash",
                         contents=payload,
                         config=types.GenerateContentConfig(
                             system_instruction=TRAUMA_EMOTION_DIAGNOSTIC_PROMPT,
@@ -414,32 +418,32 @@ with tab_log:
                         st.error("Invalid email address format.")
 
 # =========================================================
-# TAB 2: ARCHIVE & HISTORY
+# TAB 2: ARCHIVE & HISTORY (ADMIN ONLY)
 # =========================================================
-with tab_history:
-    st.subheader("📚 Master Historical Archives")
+if tab_history:
+    with tab_history:
+        st.subheader("📚 Master Historical Archives (Admin View)")
 
-    if not st.session_state.history:
-        st.info("No trauma or emotional logs found in the archive.")
-    else:
-        # Download Master Archive
-        st.download_button(
-            label="💾 Download Master JSON Archive",
-            data=json.dumps(st.session_state.history, indent=2),
-            file_name=f"weheal_archive_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
-            mime="application/json"
-        )
+        if not st.session_state.history:
+            st.info("No trauma or emotional logs found in the archive.")
+        else:
+            # Download Master Archive
+            st.download_button(
+                label="💾 Download Master JSON Archive",
+                data=json.dumps(st.session_state.history, indent=2),
+                file_name=f"weheal_archive_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json",
+                mime="application/json"
+            )
 
-        st.markdown("---")
+            st.markdown("---")
 
-        for idx, item in enumerate(st.session_state.history):
-            with st.expander(f"📅 {item.get('date')} | {item.get('trauma_category', 'General State')} | Strain: {item.get('stress_level', 'N/A')}"):
-                st.write("**Raw Feed & Sensations:**")
-                st.write(item.get("feed"))
-                st.write("**Diagnostic Evaluation:**")
-                st.markdown(item.get("report"))
+            for idx, item in enumerate(st.session_state.history):
+                with st.expander(f"📅 {item.get('date')} | {item.get('trauma_category', 'General State')} | Strain: {item.get('stress_level', 'N/A')}"):
+                    st.write("**Raw Feed & Sensations:**")
+                    st.write(item.get("feed"))
+                    st.write("**Diagnostic Evaluation:**")
+                    st.markdown(item.get("report"))
 
-                if st.session_state.is_admin_authenticated:
                     if st.button(f"🗑️ Delete Entry", key=f"del_entry_{idx}"):
                         st.session_state.history.pop(idx)
                         save_json(DATA_FILE, st.session_state.history)
