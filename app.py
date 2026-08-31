@@ -334,7 +334,7 @@ with tab_log:
                     )
 
                     response = client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model="gemini-3.6-flash",
                         contents=payload,
                         config=types.GenerateContentConfig(
                             system_instruction=TRAUMA_EMOTION_DIAGNOSTIC_PROMPT,
