@@ -44,12 +44,31 @@ def log_dispatch_event(event_type, recipients, status, details=""):
     audit_logs.insert(0, entry)
     save_json(AUDIT_LOG_FILE, audit_logs[:100])
 
-# Load master system state
-config_data = load_json(CONFIG_FILE, {})
-gemini_api_key = config_data.get("gemini_api_key", "")
-resend_api_key = config_data.get("resend_api_key", "")
-admin_default_email = config_data.get("admin_email", "")
-master_admin_pin = config_data.get("admin_pin", "admin123")
+# --- Resilient Configuration Loader ---
+def get_system_secret(key_name, fallback_default=""):
+    # 1. Check Streamlit Cloud Secrets (handles uppercase & lowercase)
+    try:
+        if hasattr(st, "secrets"):
+            if key_name.upper() in st.secrets:
+                return str(st.secrets[key_name.upper()]).strip()
+            if key_name.lower() in st.secrets:
+                return str(st.secrets[key_name.lower()]).strip()
+    except Exception:
+        pass
+    
+    # 2. Check Local bes_config.json
+    local_cfg = load_json(CONFIG_FILE, {})
+    if key_name.lower() in local_cfg:
+        return str(local_cfg[key_name.lower()]).strip()
+    if key_name.upper() in local_cfg:
+        return str(local_cfg[key_name.upper()]).strip()
+        
+    return str(fallback_default).strip()
+
+gemini_api_key = get_system_secret("GEMINI_API_KEY")
+resend_api_key = get_system_secret("RESEND_API_KEY")
+admin_default_email = get_system_secret("ADMIN_EMAIL")
+master_admin_pin = get_system_secret("ADMIN_PIN", fallback_default="admin123")
 
 if "history" not in st.session_state:
     st.session_state.history = load_json(DATA_FILE, [])
